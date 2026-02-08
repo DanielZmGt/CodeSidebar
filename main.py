@@ -27,13 +27,13 @@ class CodeSidebar:
         self.root.attributes('-topmost', True)
         self.root.configure(bg=self.bg_color)
         
-        # Layout
+        # Layout - Ensure row 3 (notebook) expands
         self.root.grid_columnconfigure(0, weight=1)
-        self.root.grid_rowconfigure(2, weight=1)
+        self.root.grid_rowconfigure(3, weight=1)
 
         # --- Header ---
         header_frame = tk.Frame(root, bg=self.bg_color)
-        header_frame.grid(row=0, column=0, sticky="ew", pady=10)
+        header_frame.grid(row=0, column=0, sticky="ew", pady=(10, 5))
         header_frame.grid_columnconfigure(0, weight=1)
 
         tk.Label(header_frame, text="CodeSidebar", font=("Segoe UI", 16, "bold"), 
@@ -41,7 +41,7 @@ class CodeSidebar:
 
         # --- Controls (Stay on Top & Add) ---
         controls_frame = tk.Frame(root, bg=self.bg_color)
-        controls_frame.grid(row=1, column=0, sticky="ew", padx=15)
+        controls_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=2)
         
         self.topmost_var = tk.BooleanVar(value=True)
         tk.Checkbutton(controls_frame, text="Stay on Top", variable=self.topmost_var,
@@ -50,7 +50,7 @@ class CodeSidebar:
                        activeforeground=self.fg_color, font=("Segoe UI", 9)).pack(side="left")
 
         tk.Button(controls_frame, text="+ Add Snippet", command=self.open_add_snippet_window,
-                  bg=self.accent_color, fg=self.fg_color, relief="flat", padx=10,
+                  bg=self.accent_color, fg=self.fg_color, relief="flat", padx=8,
                   font=("Segoe UI", 9, "bold")).pack(side="right")
 
         # --- Search Bar ---
@@ -58,7 +58,7 @@ class CodeSidebar:
         self.search_var.trace_add("write", self.filter_snippets)
         search_entry = tk.Entry(root, textvariable=self.search_var, bg=self.btn_color, 
                                 fg=self.fg_color, insertbackground="white", borderwidth=0)
-        search_entry.grid(row=2, column=0, sticky="ew", padx=15, pady=5)
+        search_entry.grid(row=2, column=0, sticky="ew", padx=10, pady=5)
         
         # --- Tabs (Notebook) ---
         style = ttk.Style()
@@ -68,7 +68,7 @@ class CodeSidebar:
         style.map("TNotebook.Tab", background=[("selected", self.accent_color)])
         
         self.notebook = ttk.Notebook(root)
-        self.notebook.grid(row=3, column=0, sticky="nsew", padx=10, pady=10)
+        self.notebook.grid(row=3, column=0, sticky="nsew", padx=2, pady=(5, 0))
         
         self.buttons = []
         self.create_tab("HTML", self.get_html_snippets())
@@ -108,8 +108,9 @@ class CodeSidebar:
         scrollbar = ttk.Scrollbar(frame, orient="vertical", command=canvas.yview)
         scroll_frame = tk.Frame(canvas, bg=self.bg_color)
         
+        # Ensure scroll_frame fills the canvas width
         scroll_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=scroll_frame, anchor="nw", width=260)
+        canvas.create_window((0, 0), window=scroll_frame, anchor="nw", width=280) # Width matches canvas area roughly
         canvas.configure(yscrollcommand=scrollbar.set)
         
         canvas.pack(side="left", fill="both", expand=True)
@@ -122,15 +123,15 @@ class CodeSidebar:
         for label, code in snippets:
             btn = tk.Button(parent, text=label, command=lambda c=code: self.paste_snippet(c),
                             bg=self.btn_color, fg=self.fg_color, relief="flat", 
-                            padx=10, pady=5, anchor="w", font=("Segoe UI", 10))
-            btn.pack(fill="x", pady=2, padx=5)
+                            padx=10, pady=8, anchor="w", font=("Segoe UI", 10))
+            btn.pack(fill="x", pady=1, padx=2)
             self.buttons.append((btn, label))
 
     def filter_snippets(self, *args):
         query = self.search_var.get().lower()
         for btn, label in self.buttons:
             if query in label.lower():
-                btn.pack(fill="x", pady=2, padx=5)
+                btn.pack(fill="x", pady=1, padx=2)
             else:
                 btn.pack_forget()
 
@@ -166,8 +167,8 @@ class CodeSidebar:
             # Add to UI immediately
             btn = tk.Button(self.custom_tab_frame, text=name, command=lambda c=code: self.paste_snippet(c),
                             bg=self.btn_color, fg=self.fg_color, relief="flat", 
-                            padx=10, pady=5, anchor="w", font=("Segoe UI", 10))
-            btn.pack(fill="x", pady=2, padx=5)
+                            padx=10, pady=8, anchor="w", font=("Segoe UI", 10))
+            btn.pack(fill="x", pady=1, padx=2)
             self.buttons.append((btn, name))
             
             window.destroy()
