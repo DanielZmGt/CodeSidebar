@@ -1,8 +1,10 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 import pyperclip
 import pyautogui
 import time
+import json
+import os
 
 class CodeSidebar:
     def __init__(self, root):
@@ -15,9 +17,13 @@ class CodeSidebar:
         self.accent_color = "#007acc"  # VS Code blue
         self.btn_color = "#333333"     # Darker gray for buttons
         
+        # Path for custom snippets
+        self.snippets_file = os.path.join(os.path.dirname(__file__), "snippets.json")
+        self.custom_snippets = self.load_custom_snippets()
+        
         # Position window at top right
         screen_width = self.root.winfo_screenwidth()
-        self.root.geometry(f"300x750+{screen_width - 320}+50")
+        self.root.geometry(f"300x850+{screen_width - 320}+50")
         self.root.attributes('-topmost', True)
         self.root.configure(bg=self.bg_color)
         
@@ -50,6 +56,24 @@ class CodeSidebar:
         self.create_tab("HTML", self.get_html_snippets())
         self.create_tab("JS", self.get_js_snippets())
         self.create_tab("CSS", self.get_css_snippets())
+        self.custom_tab_frame = self.create_tab("Custom", self.custom_snippets)
+
+        # --- Add Custom Snippet Section ---
+        add_frame = tk.Frame(root, bg=self.bg_color)
+        add_frame.grid(row=3, column=0, sticky="ew", padx=15, pady=10)
+        add_frame.grid_columnconfigure(1, weight=1)
+
+        tk.Label(add_frame, text="Name:", bg=self.bg_color, fg=self.fg_color).grid(row=0, column=0, sticky="w")
+        self.new_name_entry = tk.Entry(add_frame, bg=self.btn_color, fg=self.fg_color, borderwidth=0)
+        self.new_name_entry.grid(row=0, column=1, sticky="ew", padx=5, pady=2)
+
+        tk.Label(add_frame, text="Code:", bg=self.bg_color, fg=self.fg_color).grid(row=1, column=0, sticky="nw")
+        self.new_code_entry = tk.Text(add_frame, bg=self.btn_color, fg=self.fg_color, borderwidth=0, height=4, font=("Consolas", 9))
+        self.new_code_entry.grid(row=1, column=1, sticky="ew", padx=5, pady=2)
+
+        save_btn = tk.Button(add_frame, text="Add Snippet", command=self.save_new_snippet,
+                             bg=self.accent_color, fg=self.fg_color, relief="flat", pady=5)
+        save_btn.grid(row=2, column=0, columnspan=2, sticky="ew", pady=5)
 
     def create_tab(self, name, snippets):
         frame = tk.Frame(self.notebook, bg=self.bg_color)
@@ -67,8 +91,12 @@ class CodeSidebar:
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
+        self.render_snippets(scroll_frame, snippets)
+        return scroll_frame
+
+    def render_snippets(self, parent, snippets):
         for label, code in snippets:
-            btn = tk.Button(scroll_frame, text=label, command=lambda c=code: self.paste_snippet(c),
+            btn = tk.Button(parent, text=label, command=lambda c=code: self.paste_snippet(c),
                             bg=self.btn_color, fg=self.fg_color, relief="flat", 
                             padx=10, pady=5, anchor="w", font=("Segoe UI", 10))
             btn.pack(fill="x", pady=2, padx=5)
@@ -90,6 +118,44 @@ class CodeSidebar:
             pyautogui.hotkey('ctrl', 'v')
         except:
             pass
+
+    def load_custom_snippets(self):
+        if os.path.exists(self.snippets_file):
+            try:
+                with open(self.snippets_file, 'r') as f:
+                    return json.load(f)
+            except:
+                return []
+        return []
+
+    def save_new_snippet(self):
+        name = self.new_name_entry.get().strip()
+        code = self.new_code_entry.get("1.0", tk.END).strip()
+
+        if not name or not code:
+            messagebox.showwarning("Warning", "Please provide both a name and code.")
+            return
+
+        self.custom_snippets.append((name, code))
+        
+        try:
+            with open(self.snippets_file, 'w') as f:
+                json.dump(self.custom_snippets, f)
+            
+            # Add to UI immediately
+            btn = tk.Button(self.custom_tab_frame, text=name, command=lambda c=code: self.paste_snippet(c),
+                            bg=self.btn_color, fg=self.fg_color, relief="flat", 
+                            padx=10, pady=5, anchor="w", font=("Segoe UI", 10))
+            btn.pack(fill="x", pady=2, padx=5)
+            self.buttons.append((btn, name))
+            
+            # Clear inputs
+            self.new_name_entry.delete(0, tk.END)
+            self.new_code_entry.delete("1.0", tk.END)
+            
+            messagebox.showinfo("Success", f"Snippet '{name}' added!")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save snippet: {e}")
 
     def get_html_snippets(self):
         return [
