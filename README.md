@@ -2,7 +2,7 @@
 
 A lightweight sidebar application for managing and pasting code snippets quickly.
 
-![CodeSidebar Screenshot](screenshot.png) *(Add a screenshot here!)*
+![CodeSidebar Screenshot](screenshot.jpg)
 
 ## Features
 - **Categorized Snippets**: Switch between HTML, JS, and CSS tabs.
