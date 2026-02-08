@@ -21,14 +21,13 @@ class CodeSidebar:
         self.config_file = os.path.join(os.path.dirname(__file__), "config.json")
         self.config = self.load_config()
         
-        self.side = self.config.get("side", "Right") # Left, Right, Top, Bottom
+        self.side = self.config.get("side", "Right")
         self.expanded_size = 300
         self.collapsed_size = 10
         self.is_expanded = True
         self.pin_var = tk.BooleanVar(value=False)
         self.collapse_job = None
         
-        # Path for custom snippets
         self.snippets_file = os.path.join(os.path.dirname(__file__), "snippets.json")
         self.custom_snippets = self.load_custom_snippets()
         
@@ -36,21 +35,17 @@ class CodeSidebar:
         self.root.overrideredirect(True)
         self.root.configure(bg=self.bg_color)
         
-        # Events
         self.root.bind("<Enter>", self.on_enter)
         self.root.bind("<Leave>", self.on_leave)
 
-        # Main Layout
         self.root.grid_columnconfigure(0, weight=1)
         self.root.grid_rowconfigure(0, weight=1)
 
-        # --- Content Frame ---
         self.content_frame = tk.Frame(root, bg=self.bg_color)
         self.content_frame.grid(row=0, column=0, sticky="nsew")
         self.content_frame.grid_columnconfigure(0, weight=1)
         self.content_frame.grid_rowconfigure(3, weight=1)
 
-        # --- Header & Close ---
         header_frame = tk.Frame(self.content_frame, bg=self.bg_color)
         header_frame.grid(row=0, column=0, sticky="ew", pady=(10, 5))
         header_frame.grid_columnconfigure(0, weight=1)
@@ -61,7 +56,6 @@ class CodeSidebar:
         tk.Button(header_frame, text="✕", command=root.quit, bg=self.bg_color, fg=self.fg_color,
                   relief="flat", font=("Segoe UI", 10)).grid(row=0, column=1, padx=5, sticky="e")
 
-        # --- Controls (Pin, Side, Add) ---
         controls_frame = tk.Frame(self.content_frame, bg=self.bg_color)
         controls_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=2)
         
@@ -70,7 +64,6 @@ class CodeSidebar:
                        selectcolor=self.btn_color, activebackground=self.bg_color,
                        activeforeground=self.fg_color, font=("Segoe UI", 8)).pack(side="left")
 
-        # Side Selection
         self.side_var = tk.StringVar(value=self.side)
         side_menu = ttk.Combobox(controls_frame, textvariable=self.side_var, values=["Left", "Right", "Top", "Bottom"], 
                                  width=7, state="readonly", font=("Segoe UI", 8))
@@ -81,14 +74,12 @@ class CodeSidebar:
                   bg=self.accent_color, fg=self.fg_color, relief="flat", padx=5,
                   font=("Segoe UI", 8, "bold")).pack(side="right")
 
-        # --- Search Bar ---
         self.search_var = tk.StringVar()
         self.search_var.trace_add("write", self.filter_snippets)
         search_entry = tk.Entry(self.content_frame, textvariable=self.search_var, bg=self.btn_color, 
                                 fg=self.fg_color, insertbackground="white", borderwidth=0)
         search_entry.grid(row=2, column=0, sticky="ew", padx=10, pady=5)
         
-        # --- Tabs ---
         style = ttk.Style()
         style.theme_use('default')
         style.configure("TNotebook", background=self.bg_color, borderwidth=0)
@@ -98,63 +89,56 @@ class CodeSidebar:
         self.notebook = ttk.Notebook(self.content_frame)
         self.notebook.grid(row=3, column=0, sticky="nsew", padx=2, pady=(5, 0))
         
+        self.tab_frames = {} # tab_name -> scroll_frame
         self.buttons = []
         self.create_tab("HTML", self.get_html_snippets())
         self.create_tab("JS", self.get_js_snippets())
         self.create_tab("CSS", self.get_css_snippets())
-        self.custom_tab_frame = self.create_tab("Custom", self.custom_snippets)
+        self.create_tab("Custom", self.custom_snippets)
 
-        # Visual indicator
         self.vignette = tk.Frame(root, bg=self.accent_color)
-        
-        # Initial position
         self.update_geometry()
 
     def load_config(self):
         if os.path.exists(self.config_file):
             try:
-                with open(self.config_file, 'r') as f:
-                    return json.load(f)
+                with open(self.config_file, 'r') as f: return json.load(f)
             except: return {}
         return {}
 
     def save_config(self):
         self.config["side"] = self.side
-        with open(self.config_file, 'w') as f:
-            json.dump(self.config, f)
+        with open(self.config_file, 'w') as f: json.dump(self.config, f)
 
     def change_side(self, event):
         self.side = self.side_var.get()
         self.save_config()
+        # Redraw snippets for new layout orientation
+        for tab_name, frame in self.tab_frames.items():
+            for widget in frame.winfo_children(): widget.destroy()
+        self.buttons = []
+        self.render_snippets(self.tab_frames["HTML"], self.get_html_snippets())
+        self.render_snippets(self.tab_frames["JS"], self.get_js_snippets())
+        self.render_snippets(self.tab_frames["CSS"], self.get_css_snippets())
+        self.render_snippets(self.tab_frames["Custom"], self.custom_snippets)
         self.update_geometry()
 
     def update_geometry(self, collapsed=False):
         sw = self.root.winfo_screenwidth()
         sh = self.root.winfo_screenheight()
-        
         size = self.collapsed_size if collapsed else self.expanded_size
-        
-        if self.side == "Right":
-            geom = f"{size}x700+{sw - size}+50"
-        elif self.side == "Left":
-            geom = f"{size}x700+0+50"
-        elif self.side == "Top":
-            geom = f"{sw}x{size}+0+0"
-        elif self.side == "Bottom":
-            geom = f"{sw}x{size}+0+{sh - size}"
-            
+        if self.side == "Right": geom = f"{size}x700+{sw - size}+50"
+        elif self.side == "Left": geom = f"{size}x700+0+50"
+        elif self.side == "Top": geom = f"{sw}x{size}+0+0"
+        elif self.side == "Bottom": geom = f"{sw}x{size}+0+{sh - size}"
         self.root.geometry(geom)
 
     def on_enter(self, event):
-        if self.collapse_job:
-            self.root.after_cancel(self.collapse_job)
-            self.collapse_job = None
-        if not self.is_expanded:
-            self.expand()
+        if self.collapse_job: self.root.after_cancel(self.collapse_job); self.collapse_job = None
+        if not self.is_expanded: self.expand()
 
     def on_leave(self, event):
-        if not self.pin_var.get():
-            self.collapse_job = self.root.after(500, self.collapse)
+        if not self.pin_var.get(): self.collapse_job = self.root.after(500, self.collapse)
 
     def expand(self):
         self.update_geometry(collapsed=False)
@@ -166,26 +150,19 @@ class CodeSidebar:
         x, y = self.root.winfo_pointerxy()
         widget = self.root.winfo_containing(x, y)
         if widget and str(widget).startswith(str(self.root)): return
-
         self.update_geometry(collapsed=True)
         self.content_frame.grid_forget()
         self.vignette.grid(row=0, column=0, sticky="nsew")
         self.is_expanded = False
 
     def open_add_snippet_window(self):
-        was_pinned = self.pin_var.get()
-        self.pin_var.set(True)
+        was_pinned = self.pin_var.get(); self.pin_var.set(True)
         add_win = tk.Toplevel(self.root)
         add_win.title("Add Snippet")
         add_win.geometry("350x300")
         add_win.configure(bg=self.bg_color)
         add_win.attributes('-topmost', True)
-        
-        def on_close():
-            self.pin_var.set(was_pinned)
-            add_win.destroy()
-            self.on_leave(None)
-
+        def on_close(): self.pin_var.set(was_pinned); add_win.destroy(); self.on_leave(None)
         add_win.protocol("WM_DELETE_WINDOW", on_close)
         tk.Label(add_win, text="Name:", bg=self.bg_color, fg=self.fg_color).pack(pady=(15, 2), padx=15, anchor="w")
         name_entry = tk.Entry(add_win, bg=self.btn_color, fg=self.fg_color, borderwidth=0, insertbackground="white")
@@ -203,26 +180,47 @@ class CodeSidebar:
         scrollbar = ttk.Scrollbar(frame, orient="vertical", command=canvas.yview)
         scroll_frame = tk.Frame(canvas, bg=self.bg_color)
         scroll_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=scroll_frame, anchor="nw", width=280) 
+        
+        # Adjust scroll content width based on orientation
+        canvas_width = 1200 if self.side in ["Top", "Bottom"] else 280
+        canvas.create_window((0, 0), window=scroll_frame, anchor="nw", width=canvas_width) 
+        
         canvas.configure(yscrollcommand=scrollbar.set)
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
+        self.tab_frames[name] = scroll_frame
         self.render_snippets(scroll_frame, snippets)
         return scroll_frame
 
     def render_snippets(self, parent, snippets):
-        for label, code in snippets:
-            btn = tk.Button(parent, text=label, command=lambda c=code: self.paste_snippet(c),
-                            bg=self.btn_color, fg=self.fg_color, relief="flat", 
-                            padx=10, pady=8, anchor="w", font=("Segoe UI", 10))
-            btn.pack(fill="x", pady=1, padx=2)
-            self.buttons.append((btn, label))
+        if self.side in ["Top", "Bottom"]:
+            # Grid layout for horizontal mode
+            cols = 4
+            for i, (label, code) in enumerate(snippets):
+                btn = tk.Button(parent, text=label, command=lambda c=code: self.paste_snippet(c),
+                                bg=self.btn_color, fg=self.fg_color, relief="flat", 
+                                padx=10, pady=8, anchor="w", font=("Segoe UI", 10))
+                btn.grid(row=i // cols, column=i % cols, sticky="ew", padx=5, pady=5)
+                parent.grid_columnconfigure(i % cols, weight=1)
+                self.buttons.append((btn, label))
+        else:
+            # List layout for vertical mode
+            for label, code in snippets:
+                btn = tk.Button(parent, text=label, command=lambda c=code: self.paste_snippet(c),
+                                bg=self.btn_color, fg=self.fg_color, relief="flat", 
+                                padx=10, pady=8, anchor="w", font=("Segoe UI", 10))
+                btn.pack(fill="x", pady=1, padx=2)
+                self.buttons.append((btn, label))
 
     def filter_snippets(self, *args):
         query = self.search_var.get().lower()
         for btn, label in self.buttons:
-            if query in label.lower(): btn.pack(fill="x", pady=1, padx=2)
-            else: btn.pack_forget()
+            if query in label.lower():
+                if self.side in ["Top", "Bottom"]: btn.grid()
+                else: btn.pack(fill="x", pady=1, padx=2)
+            else:
+                if self.side in ["Top", "Bottom"]: btn.grid_remove()
+                else: btn.pack_forget()
 
     def paste_snippet(self, text):
         try:
@@ -244,54 +242,25 @@ class CodeSidebar:
         self.custom_snippets.append((name, code))
         try:
             with open(self.snippets_file, 'w') as f: json.dump(self.custom_snippets, f)
-            btn = tk.Button(self.custom_tab_frame, text=name, command=lambda c=code: self.paste_snippet(c),
+            parent = self.tab_frames["Custom"]
+            btn = tk.Button(parent, text=name, command=lambda c=code: self.paste_snippet(c),
                             bg=self.btn_color, fg=self.fg_color, relief="flat", padx=10, pady=8, anchor="w", font=("Segoe UI", 10))
-            btn.pack(fill="x", pady=1, padx=2)
+            if self.side in ["Top", "Bottom"]:
+                idx = len(self.custom_snippets) - 1
+                btn.grid(row=idx // 4, column=idx % 4, sticky="ew", padx=5, pady=5)
+                parent.grid_columnconfigure(idx % 4, weight=1)
+            else:
+                btn.pack(fill="x", pady=1, padx=2)
             self.buttons.append((btn, name))
             close_callback()
         except: pass
 
     def get_html_snippets(self):
-        return [
-            ("Boilerplate", "<!DOCTYPE html>\n<html>\n<head>\n<title></title>\n</head>\n<body>\n\n</body>\n</html>"),
-            ("Div Container", '<div class="container">\n\n</div>'),
-            ("Flex Row", '<div style="display: flex; flex-direction: row;">\n\n</div>'),
-            ("Input Field", '<input type="text" placeholder="">'),
-            ("Submit Button", '<button type="submit">Submit</button>'),
-            ("Image Link", '<img src="" alt="">'),
-            ("List (UL)", "<ul>\n  <li></li>\n</ul>"),
-            ("Table", "<table>\n  <tr><td></td></tr>\n</table>"),
-            ("Form", '<form>\n  <input type="text">\n  <button>Go</button>\n</form>'),
-            ("Style Tag", "<style>\n\n</style>"),
-            ("Script Tag", "<script>\n\n</script>"),
-        ]
-
+        return [("Boilerplate", "<!DOCTYPE html>\n<html>\n<head>\n<title></title>\n</head>\n<body>\n\n</body>\n</html>"), ("Div Container", '<div class="container">\n\n</div>'), ("Flex Row", '<div style="display: flex; flex-direction: row;">\n\n</div>'), ("Input Field", '<input type="text" placeholder="">'), ("Submit Button", '<button type="submit">Submit</button>'), ("Image Link", '<img src="" alt="">'), ("List (UL)", "<ul>\n  <li></li>\n</ul>"), ("Table", "<table>\n  <tr><td></td></tr>\n</table>"), ("Form", '<form>\n  <input type="text">\n  <button>Go</button>\n</form>'), ("Style Tag", "<style>\n\n</style>"), ("Script Tag", "<script>\n\n</script>")]
     def get_js_snippets(self):
-        return [
-            ("Console Log", "console.log();"),
-            ("Async Func", "async function name() {\n  try {\n    \n  } catch (err) {}\n}"),
-            ("Arrow Func", "const name = () => {\n  \n};"),
-            ("Event Listener", 'addEventListener("click", (e) => {});'),
-            ("Map Array", "const newArr = arr.map(item => item);"),
-            ("Fetch API", "const res = await fetch(url);\nconst data = await res.json();"),
-            ("Local Storage Set", "localStorage.setItem('key', JSON.stringify(data));"),
-            ("JSON Parse", "JSON.parse(data);"),
-            ("Query Selector", "document.querySelector('');"),
-            ("Set Timeout", "setTimeout(() => {}, 1000);"),
-            ("React Component", "const App = () => {\n  return <div></div>;\n};"),
-        ]
-
+        return [("Console Log", "console.log();"), ("Async Func", "async function name() {\n  try {\n    \n  } catch (err) {}\n}"), ("Arrow Func", "const name = () => {\n  \n};"), ("Event Listener", 'addEventListener("click", (e) => {});'), ("Map Array", "const newArr = arr.map(item => item);"), ("Fetch API", "const res = await fetch(url);\nconst data = await res.json();"), ("Local Storage Set", "localStorage.setItem('key', JSON.stringify(data));"), ("JSON Parse", "JSON.parse(data);"), ("Query Selector", "document.querySelector('');"), ("Set Timeout", "setTimeout(() => {}, 1000);"), ("React Component", "const App = () => {\n  return <div></div>;\n};")]
     def get_css_snippets(self):
-        return [
-            ("Flex Center", "display: flex;\njustify-content: center;\nalign-items: center;"),
-            ("Grid Layout", "display: grid;\ngrid-template-columns: repeat(3, 1fr);"),
-            ("Box Shadow", "box-shadow: 0 4px 6px rgba(0,0,0,0.1);"),
-            ("Reset CSS", "* {\n  margin: 0;\n  padding: 0;\n  box-sizing: border-box;\n}"),
-            ("Responsive Query", "@media (max-width: 768px) {\n\n}"),
-            ("Transition", "transition: all 0.3s ease;"),
-            ("Border Radius", "border-radius: 8px;"),
-            ("Hover State", "&:hover {\n  opacity: 0.8;\n}"),
-        ]
+        return [("Flex Center", "display: flex;\njustify-content: center;\nalign-items: center;"), ("Grid Layout", "display: grid;\ngrid-template-columns: repeat(3, 1fr);"), ("Box Shadow", "box-shadow: 0 4px 6px rgba(0,0,0,0.1);"), ("Reset CSS", "* {\n  margin: 0;\n  padding: 0;\n  box-sizing: border-box;\n}"), ("Responsive Query", "@media (max-width: 768px) {\n\n}"), ("Transition", "transition: all 0.3s ease;"), ("Border Radius", "border-radius: 8px;"), ("Hover State", "&:hover {\n  opacity: 0.8;\n}")]
 
 if __name__ == "__main__":
     root = tk.Tk()
