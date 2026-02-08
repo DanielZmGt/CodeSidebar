@@ -1,16 +1,17 @@
 # CodeSidebar
 
-A lightweight sidebar application for managing and pasting code snippets quickly.
+A lightweight, auto-hiding sidebar application for managing and pasting code snippets quickly.
 
 ![CodeSidebar Screenshot](screenshot.jpg)
 
 ## Features
-- **Categorized Snippets**: Switch between HTML, JS, and CSS tabs.
-- **Custom Snippets**: Add your own custom code snippets directly through the UI.
-- **Persistent Storage**: Your custom snippets are saved locally and persist between sessions.
-- **Instant Paste**: One-click to copy and paste directly into your active editor.
-- **Search**: Quickly filter snippets by name across all categories.
-- **Auto-Hide & Pin**: Automatically collapses to a thin bar when not in use. Hover to expand, or use "Pin Open" to keep it visible.
+- **Auto-Hide & Expand**: Collapses to a thin "vignette" on the edge of your screen when not in use. Simply hover your mouse to expand it instantly.
+- **Pin Open**: Toggle the "Pin Open" checkbox to keep the sidebar visible while you work.
+- **Categorized Snippets**: Fast access to HTML, JS, and CSS tabs.
+- **Custom Snippets**: Add and save your own snippets through a dedicated pop-up window.
+- **Persistent Storage**: Custom snippets are saved locally in `snippets.json` and persist between sessions.
+- **Search**: Real-time filtering across all snippet categories.
+- **Modern UI**: Dark-themed, space-optimized layout designed for developers.
 
 ## Installation
 
@@ -41,10 +42,7 @@ pip install -r requirements.txt
 ## Usage
 
 ### Windows
-Double-click `Run_CodeSidebar.bat` or run:
-```bash
-python main.py
-```
+Double-click `Run_CodeSidebar.bat` to launch the app silently in the background.
 
 ### macOS/Linux
 Run the shell script:
