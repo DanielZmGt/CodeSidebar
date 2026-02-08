@@ -10,7 +10,7 @@ A lightweight sidebar application for managing and pasting code snippets quickly
 - **Persistent Storage**: Your custom snippets are saved locally and persist between sessions.
 - **Instant Paste**: One-click to copy and paste directly into your active editor.
 - **Search**: Quickly filter snippets by name across all categories.
-- **Always on Top**: Keeps your snippets accessible while you code.
+- **Auto-Hide & Pin**: Automatically collapses to a thin bar when not in use. Hover to expand, or use "Pin Open" to keep it visible.
 
 ## Installation
 
