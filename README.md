@@ -6,8 +6,10 @@ A lightweight sidebar application for managing and pasting code snippets quickly
 
 ## Features
 - **Categorized Snippets**: Switch between HTML, JS, and CSS tabs.
+- **Custom Snippets**: Add your own custom code snippets directly through the UI.
+- **Persistent Storage**: Your custom snippets are saved locally and persist between sessions.
 - **Instant Paste**: One-click to copy and paste directly into your active editor.
-- **Search**: Quickly filter snippets by name.
+- **Search**: Quickly filter snippets by name across all categories.
 - **Always on Top**: Keeps your snippets accessible while you code.
 
 ## Installation
