@@ -252,13 +252,46 @@ class CodeSidebar:
         except: pass
 
     def get_html_snippets(self):
-        return [("Boilerplate", "<!DOCTYPE html>\n<html>\n<head>\n<title></title>\n</head>\n<body>\n\n</body>\n</html>"), ("Div", '<div class="container">\n\n</div>'), ("Flex Row", '<div style="display: flex;">\n\n</div>')]
+        return [
+            ("Boilerplate", "<!DOCTYPE html>\n<html>\n<head>\n<title></title>\n</head>\n<body>\n\n</body>\n</html>"),
+            ("Div Container", '<div class="container">\n\n</div>'),
+            ("Flex Row", '<div style="display: flex; flex-direction: row;">\n\n</div>'),
+            ("Input Field", '<input type="text" placeholder="">'),
+            ("Submit Button", '<button type="submit">Submit</button>'),
+            ("Image Link", '<img src="" alt="">'),
+            ("List (UL)", "<ul>\n  <li></li>\n</ul>"),
+            ("Table", "<table>\n  <tr><td></td></tr>\n</table>"),
+            ("Form", '<form>\n  <input type="text">\n  <button>Go</button>\n</form>'),
+            ("Style Tag", "<style>\n\n</style>"),
+            ("Script Tag", "<script>\n\n</script>"),
+        ]
 
     def get_js_snippets(self):
-        return [("Console Log", "console.log();"), ("Async Func", "async function name() {\n\n}"), ("Arrow Func", "const name = () => {\n\n};")]
+        return [
+            ("Console Log", "console.log();"),
+            ("Async Func", "async function name() {\n  try {\n    \n  } catch (err) {}\n}"),
+            ("Arrow Func", "const name = () => {\n  \n};"),
+            ("Event Listener", 'addEventListener("click", (e) => {});'),
+            ("Map Array", "const newArr = arr.map(item => item);"),
+            ("Fetch API", "const res = await fetch(url);\nconst data = await res.json();"),
+            ("Local Storage Set", "localStorage.setItem('key', JSON.stringify(data));"),
+            ("JSON Parse", "JSON.parse(data);"),
+            ("Query Selector", "document.querySelector('');"),
+            ("Set Timeout", "setTimeout(() => {}, 1000);"),
+            ("React Component", "const App = () => {\n  return <div></div>;\n};"),
+        ]
 
     def get_css_snippets(self):
-        return [("Flex Center", "display: flex;\njustify-content: center;\nalign-items: center;"), ("Grid", "display: grid;\ngrid-template-columns: repeat(3, 1fr);")]
+        return [
+            ("Flex Center", "display: flex;\njustify-content: center;\nalign-items: center;"),
+            ("Grid Layout", "display: grid;\ngrid-template-columns: repeat(3, 1fr);"),
+            ("Box Shadow", "box-shadow: 0 4px 6px rgba(0,0,0,0.1);"),
+            ("Reset CSS", "* {\n  margin: 0;\n  padding: 0;\n  box-sizing: border-box;\n}"),
+            ("Responsive Query", "@media (max-width: 768px) {\n\n}"),
+            ("Transition", "transition: all 0.3s ease;"),
+            ("Border Radius", "border-radius: 8px;"),
+            ("Hover State", "&:hover {\n  opacity: 0.8;\n}"),
+        ]
 
 if __name__ == "__main__":
     root = tk.Tk()
