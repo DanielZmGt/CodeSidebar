@@ -117,12 +117,12 @@ class CodeSidebar:
         # Don't collapse if pinned or if opening a dialog/toplevel
         if not self.pin_var.get():
             # Add small delay to prevent flickering
-            self.collapse_job = self.root.after(300, self.collapse)
+            self.collapse_job = self.root.after(500, self.collapse)
 
     def expand(self):
         self.root.geometry(f"{self.expanded_width}x700+{self.root.winfo_screenwidth() - self.expanded_width}+50")
-        self.content_frame.pack(fill="both", expand=True)
-        self.vignette.pack_forget()
+        self.content_frame.grid(row=0, column=0, rowspan=4, sticky="nsew")
+        self.vignette.grid_forget()
         self.is_expanded = True
 
     def collapse(self):
@@ -133,8 +133,8 @@ class CodeSidebar:
              return
 
         self.root.geometry(f"{self.collapsed_width}x700+{self.root.winfo_screenwidth() - self.collapsed_width}+50")
-        self.content_frame.pack_forget()
-        self.vignette.pack(fill="y", expand=True)
+        self.content_frame.grid_forget()
+        self.vignette.grid(row=0, column=0, sticky="nsew")
         self.is_expanded = False
 
     def open_add_snippet_window(self):
