@@ -23,7 +23,7 @@ class CodeSidebar:
         
         # Position window at top right
         screen_width = self.root.winfo_screenwidth()
-        self.root.geometry(f"300x850+{screen_width - 320}+50")
+        self.root.geometry(f"300x700+{screen_width - 320}+50")
         self.root.attributes('-topmost', True)
         self.root.configure(bg=self.bg_color)
         
@@ -32,15 +32,33 @@ class CodeSidebar:
         self.root.grid_rowconfigure(2, weight=1)
 
         # --- Header ---
-        tk.Label(root, text="CodeSidebar", font=("Segoe UI", 16, "bold"), 
-                 bg=self.bg_color, fg=self.fg_color).grid(row=0, column=0, pady=10)
+        header_frame = tk.Frame(root, bg=self.bg_color)
+        header_frame.grid(row=0, column=0, sticky="ew", pady=10)
+        header_frame.grid_columnconfigure(0, weight=1)
+
+        tk.Label(header_frame, text="CodeSidebar", font=("Segoe UI", 16, "bold"), 
+                 bg=self.bg_color, fg=self.fg_color).grid(row=0, column=0, padx=10)
+
+        # --- Controls (Stay on Top & Add) ---
+        controls_frame = tk.Frame(root, bg=self.bg_color)
+        controls_frame.grid(row=1, column=0, sticky="ew", padx=15)
+        
+        self.topmost_var = tk.BooleanVar(value=True)
+        tk.Checkbutton(controls_frame, text="Stay on Top", variable=self.topmost_var,
+                       command=self.toggle_topmost, bg=self.bg_color, fg=self.fg_color,
+                       selectcolor=self.btn_color, activebackground=self.bg_color,
+                       activeforeground=self.fg_color, font=("Segoe UI", 9)).pack(side="left")
+
+        tk.Button(controls_frame, text="+ Add Snippet", command=self.open_add_snippet_window,
+                  bg=self.accent_color, fg=self.fg_color, relief="flat", padx=10,
+                  font=("Segoe UI", 9, "bold")).pack(side="right")
 
         # --- Search Bar ---
         self.search_var = tk.StringVar()
         self.search_var.trace_add("write", self.filter_snippets)
         search_entry = tk.Entry(root, textvariable=self.search_var, bg=self.btn_color, 
                                 fg=self.fg_color, insertbackground="white", borderwidth=0)
-        search_entry.grid(row=1, column=0, sticky="ew", padx=15, pady=5)
+        search_entry.grid(row=2, column=0, sticky="ew", padx=15, pady=5)
         
         # --- Tabs (Notebook) ---
         style = ttk.Style()
@@ -50,7 +68,7 @@ class CodeSidebar:
         style.map("TNotebook.Tab", background=[("selected", self.accent_color)])
         
         self.notebook = ttk.Notebook(root)
-        self.notebook.grid(row=2, column=0, sticky="nsew", padx=10, pady=10)
+        self.notebook.grid(row=3, column=0, sticky="nsew", padx=10, pady=10)
         
         self.buttons = []
         self.create_tab("HTML", self.get_html_snippets())
@@ -58,22 +76,28 @@ class CodeSidebar:
         self.create_tab("CSS", self.get_css_snippets())
         self.custom_tab_frame = self.create_tab("Custom", self.custom_snippets)
 
-        # --- Add Custom Snippet Section ---
-        add_frame = tk.Frame(root, bg=self.bg_color)
-        add_frame.grid(row=3, column=0, sticky="ew", padx=15, pady=10)
-        add_frame.grid_columnconfigure(1, weight=1)
+    def toggle_topmost(self):
+        self.root.attributes('-topmost', self.topmost_var.get())
 
-        tk.Label(add_frame, text="Name:", bg=self.bg_color, fg=self.fg_color).grid(row=0, column=0, sticky="w")
-        self.new_name_entry = tk.Entry(add_frame, bg=self.btn_color, fg=self.fg_color, borderwidth=0)
-        self.new_name_entry.grid(row=0, column=1, sticky="ew", padx=5, pady=2)
+    def open_add_snippet_window(self):
+        add_win = tk.Toplevel(self.root)
+        add_win.title("Add New Snippet")
+        add_win.geometry("350x300")
+        add_win.configure(bg=self.bg_color)
+        add_win.attributes('-topmost', True)
+        
+        tk.Label(add_win, text="Snippet Name:", bg=self.bg_color, fg=self.fg_color).pack(pady=(15, 2), padx=15, anchor="w")
+        name_entry = tk.Entry(add_win, bg=self.btn_color, fg=self.fg_color, borderwidth=0, insertbackground="white")
+        name_entry.pack(fill="x", padx=15, pady=5)
 
-        tk.Label(add_frame, text="Code:", bg=self.bg_color, fg=self.fg_color).grid(row=1, column=0, sticky="nw")
-        self.new_code_entry = tk.Text(add_frame, bg=self.btn_color, fg=self.fg_color, borderwidth=0, height=4, font=("Consolas", 9))
-        self.new_code_entry.grid(row=1, column=1, sticky="ew", padx=5, pady=2)
+        tk.Label(add_win, text="Code Content:", bg=self.bg_color, fg=self.fg_color).pack(pady=(10, 2), padx=15, anchor="w")
+        code_text = tk.Text(add_win, bg=self.btn_color, fg=self.fg_color, borderwidth=0, height=6, font=("Consolas", 10), insertbackground="white")
+        code_text.pack(fill="both", padx=15, pady=5, expand=True)
 
-        save_btn = tk.Button(add_frame, text="Add Snippet", command=self.save_new_snippet,
-                             bg=self.accent_color, fg=self.fg_color, relief="flat", pady=5)
-        save_btn.grid(row=2, column=0, columnspan=2, sticky="ew", pady=5)
+        save_btn = tk.Button(add_win, text="Save Snippet", 
+                             command=lambda: self.save_new_snippet(name_entry.get().strip(), code_text.get("1.0", tk.END).strip(), add_win),
+                             bg=self.accent_color, fg=self.fg_color, relief="flat", pady=8, font=("Segoe UI", 10, "bold"))
+        save_btn.pack(fill="x", padx=15, pady=15)
 
     def create_tab(self, name, snippets):
         frame = tk.Frame(self.notebook, bg=self.bg_color)
@@ -128,12 +152,9 @@ class CodeSidebar:
                 return []
         return []
 
-    def save_new_snippet(self):
-        name = self.new_name_entry.get().strip()
-        code = self.new_code_entry.get("1.0", tk.END).strip()
-
+    def save_new_snippet(self, name, code, window):
         if not name or not code:
-            messagebox.showwarning("Warning", "Please provide both a name and code.")
+            messagebox.showwarning("Warning", "Please provide both a name and code.", parent=window)
             return
 
         self.custom_snippets.append((name, code))
@@ -149,13 +170,10 @@ class CodeSidebar:
             btn.pack(fill="x", pady=2, padx=5)
             self.buttons.append((btn, name))
             
-            # Clear inputs
-            self.new_name_entry.delete(0, tk.END)
-            self.new_code_entry.delete("1.0", tk.END)
-            
+            window.destroy()
             messagebox.showinfo("Success", f"Snippet '{name}' added!")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save snippet: {e}")
+            messagebox.showerror("Error", f"Failed to save snippet: {e}", parent=window)
 
     def get_html_snippets(self):
         return [
