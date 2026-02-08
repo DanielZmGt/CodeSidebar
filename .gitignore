@@ -9,6 +9,7 @@ env/
 
 # Data
 snippets.json
+config.json
 
 # Logs
 *.log
